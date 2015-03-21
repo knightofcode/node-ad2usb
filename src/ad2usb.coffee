@@ -50,19 +50,19 @@ class Alarm extends EventEmitter
     sec = parts[0].replace(/[\[\]]/g, '')
     sections.push sec
     sec1 = sec.split('')
-    disarmed = sec1.shift() == '1'
+    ready = sec1.shift() == '1'
     armedAway = sec1.shift() == '1'
     armedStay = sec1.shift() == '1'
-    if disarmed or armedAway or armedStay
-      if disarmed and !@disarmed
-        @emit 'disarmed'
-      else if armedAway and !@armedAway
-        @emit 'armedAway'
-      else if armedStay and !@armedStay
-        @emit 'armedStay'
-      @disarmed = disarmed
-      @armedAway = armedAway
-      @armedStay = armedStay
+    armedState = 'disarmed'
+    if ready
+      armedState = 'ready'
+    else if armedAway
+      armedState = 'armedAway'
+    else if armedStay
+      armedState = 'armedStay'
+    if armedState != @armedState
+      @emit armedState
+    @armedState = armedState
 
     @state 'backlight', sec1.shift() == '1'
     @state 'programming', sec1.shift() == '1'
@@ -84,14 +84,18 @@ class Alarm extends EventEmitter
     # Section 2: 008
     sec2 = parts[1]
     sections.push sec2
-    @state 'fault', sec2
-    # What should be done with this?
+    @state 'numeric_code', sec2
 
     # Section 3: [f702000b1008001c08020000000000]
-    sections.push parts[2].replace(/[\[\]]/g, '')
+    sec3 = parts[2].replace(/[\[\]]/g, '')
+    sections.push sec3
 
     # Section 4: "****DISARMED****  Ready to Arm  "
-    sections.push parts[3]
+    sec4 = parts[3].replace(/\"/g, '')
+    sections.push sec4
+    @state 'message', sec4
+    @state 'message:1', sec4.substring(0,16)
+    @state 'message:2', sec4.substring(16,32)
 
     @emit.apply @, ['raw'].concat(sections) # raw emit for debugging or additional handling
 
@@ -143,12 +147,20 @@ class Alarm extends EventEmitter
     @socket.write(cmd)
 
   ###
+  Public: Check ready status
+
+  Returns true if alarm is disarmed and ready to be armed, otherwise false
+  ###
+  isReady: ->
+    @armedState == "ready"
+
+  ###
   Public: Check armed status
 
   Returns true if alarm is armed in stay or away mode, otherwise false
   ###
   isArmed: ->
-    @armedStay or @armedAway
+    @armedState == "armedStay" or @armedState == "armedAway"
 
   ###
   Public: Arm the alarm in away mode.
@@ -218,4 +230,3 @@ class Alarm extends EventEmitter
 
 
 module.exports = Alarm
-

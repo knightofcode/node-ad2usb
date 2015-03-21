@@ -39,13 +39,17 @@ describe 'AD2USB', ->
       assert.equal sec1, '1000000100000000----'
       assert.equal sec2, '008'
       assert.equal sec3, 'f702000b1008001c08020000000000'
-      assert.equal sec4, '"****DISARMED****  Ready to Arm  "'
+      assert.equal sec4, '****DISARMED****  Ready to Arm  '
       done()
+    socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
+
+  it 'should emit ready', (done) ->
+    alarm.on 'ready', done
     socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
 
   it 'should emit disarmed', (done) ->
     alarm.on 'disarmed', done
-    socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
+    socket.send '[0000000100000000----],008,[f702000b1008000c08020000000000],"****DISARMED****Hit * for faults"'
 
   it 'should emit armed stay', (done) ->
     alarm.on 'armedStay', done
@@ -55,18 +59,23 @@ describe 'AD2USB', ->
     alarm.on 'armedAway', done
     socket.send '[0100000100000000----],008,[f702000b1008008c08020000000000],"ARMED ***AWAY***                "'
 
-  it 'should emit fault', (done) ->
-    alarm.on 'fault', (zone) ->
-      assert.equal zone, "008"
-      done()
+  it 'should not repeatedly emit ready', (done)->
+    count = 0
+    alarm.on 'ready', ->
+      count += 1
     socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
+    socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
+    assertion = ->
+      assert.equal(1, count)
+      done()
+    setTimeout assertion, 10
 
   it 'should not repeatedly emit disarmed', (done)->
     count = 0
     alarm.on 'disarmed', ->
       count += 1
-    socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
-    socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
+    socket.send '[0000000100000000----],008,[f702000b1008000c08020000000000],"****DISARMED****Hit * for faults"'
+    socket.send '[0000000100000000----],008,[f702000b1008000c08020000000000],"****DISARMED****Hit * for faults"'
     assertion = ->
       assert.equal(1, count)
       done()
@@ -95,27 +104,15 @@ describe 'AD2USB', ->
     setTimeout assertion, 10
 
   it 'should emit once when alarm status changes', (done) ->
-    disarmedCount = 0
+    readyCount = 0
     armedCount = 0
-    alarm.on 'disarmed', -> disarmedCount += 1
+    alarm.on 'ready', -> readyCount += 1
     alarm.on 'armedAway', -> armedCount += 1
     socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
     socket.send '[0100000100000000----],008,[f702000b1008008c08020000000000],"ARMED ***AWAY***                "'
     assertion = ->
-      assert.equal 1, disarmedCount, "disarmed event occurred #{disarmedCount} times"
+      assert.equal 1, readyCount, "ready event occurred #{readyCount} times"
       assert.equal 1, armedCount, "armed event occurred #{armedCount} times"
-      done()
-    setTimeout assertion, 10
-
-  it 'should not reset alarm status', (done) ->
-    count = 0
-    alarm.on 'disarmed', ->
-      count += 1
-    socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
-    socket.send '[0000000100000000----],008,[f702000b1008000c08020000000000],"****DISARMED****Hit * for faults"'
-    socket.send '[1000000100000000----],008,[f702000b1008001c08020000000000],"****DISARMED****  Ready to Arm  "'
-    assertion = ->
-      assert.equal(1, count)
       done()
     setTimeout assertion, 10
 

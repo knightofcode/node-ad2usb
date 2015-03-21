@@ -7,21 +7,19 @@ class Socket extends Duplex
     @written = null
     super
 
-  write: (msg) ->
-    @written = msg
-    @emit('readable') if @data.length
+  _write: (chunk, encoding, callback) ->
+    @written = chunk
 
-  read: ->
+  _read: (size) ->
     try
       if @data.length
-        "#{@data.join('\n')}\n"
+        @push "#{@data.join('\n')}\n"
       else
-        null
+        @push null
     finally
       @data = []
 
   send: (data) ->
     @data.push data
-    @emit('readable')
 
 module.exports = Socket
