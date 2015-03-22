@@ -5,7 +5,7 @@
   "contributors": [
     "Knight of Code <knightofcode@users.noreply.github.com> (https://github.com/knightofcode)"
   ],
-  "version": "1.1.0",
+  "version": "2.0.0-alpha",
   "main": "lib/ad2usb.js",
   "licenses": [
     {
@@ -18,18 +18,18 @@
     "url": "https://github.com/knightofcode/node-ad2usb.git"
   },
   "engines": {
-    "node": ">= 0.10.0"
+    "node": "~0.12.0"
   },
   "scripts": {
     "test": "cake test",
     "prepublish": "cake build"
   },
   "dependencies": {
-    "split": "^0.3.0"
+    "split": "^0.3.3"
   },
   "devDependencies": {
-    "coffee-script": "^1.8.0",
-    "mocha": "^1.21.4",
-    "chai": "^1.9.1"
+    "coffee-script": "^1.9.1",
+    "mocha": "^2.2.1",
+    "chai": "^2.1.2"
   }
 }
